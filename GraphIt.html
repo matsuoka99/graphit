@@ -612,9 +612,6 @@ function getVar(v){return getComputedStyle(document.body).getPropertyValue(v).tr
 function hexA(hex,a){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return'rgba('+r+','+g+','+b+','+a+')';}
 
 function draw(){
-  document.getElementById('saveOutput').value='';
-  document.getElementById('btnCopySave').style.display='none';
-  document.getElementById('loadErr').textContent='';
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.setTransform(dpr,0,0,dpr,0,0);
   var hasNodes=Object.keys(nodes).length>0;
@@ -996,10 +993,9 @@ var undoStack=[];
 var MAX_UNDO=30;
 
 function snapshotForUndo(){
-  // Deep copy node positions and edge list
   var nodeSnap={};
   Object.keys(nodes).forEach(function(k){
-    nodeSnap[k]={x:nodes[k].x,y:nodes[k].y};
+    nodeSnap[k]={x:nodes[k].x,y:nodes[k].y,degree:nodes[k].degree};
   });
   var edgeSnap=edges.map(function(e){return{a:e.a,b:e.b,w:e.w,ang:e.ang};});
   undoStack.push({nodes:nodeSnap,edges:edgeSnap});
@@ -1011,20 +1007,17 @@ function doUndo(){
   var snap=undoStack.pop();
   // Restore edges
   edges=snap.edges.map(function(e){return{a:e.a,b:e.b,w:e.w,ang:e.ang};});
-  // Rebuild nodes from edges (degree), then restore positions
+  // Restore nodes directly from snapshot (preserves standalone nodes + positions)
   nodes={};
-  edges.forEach(function(e){
-    nodes[e.a]=nodes[e.a]||{id:e.a,degree:0,x:null,y:null};
-    nodes[e.b]=nodes[e.b]||{id:e.b,degree:0,x:null,y:null};
-    nodes[e.a].degree++;nodes[e.b].degree++;
-  });
-  // Restore positions from snapshot (only for nodes that still exist)
   Object.keys(snap.nodes).forEach(function(k){
-    if(nodes[k]){nodes[k].x=snap.nodes[k].x;nodes[k].y=snap.nodes[k].y;}
+    nodes[k]={id:k,degree:snap.nodes[k].degree,x:snap.nodes[k].x,y:snap.nodes[k].y};
   });
   distCache=null;
-  if(edges.length){buildDistCache();updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();draw();}
-  else{clearAll();}
+  var hasAnything=edges.length||Object.keys(nodes).length;
+  if(hasAnything){
+    if(edges.length)buildDistCache();
+    updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();draw();
+  } else {clearAll();}
 }
 
 document.getElementById('inputArea').addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='Enter')parseAndRender();});
@@ -1131,17 +1124,6 @@ function updateCursor(){
   canvas.style.cursor=(currentTool==='addNode'||currentTool==='addEdge')?'crosshair':'default';
 }
 
-// ── ADD NODE ────────────────────────────────────────
-function addNodeAt(wx,wy){
-  snapshotForUndo();
-  var name;
-  do{name=String(nodeCounter++);}while(nodes[name]);
-  nodes[name]={id:name,degree:0,x:wx,y:wy};
-  distCache=null;
-  updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();
-  draw();
-}
-
 // ── MODAL ───────────────────────────────────────────
 var modalCallback=null;
 
@@ -1204,94 +1186,6 @@ function updateModalSlots(){
     b.classList.toggle('filled',val!==null);
   }
 }
-
-// ── RENAME ──────────────────────────────────────────
-var renameTarget=null;
-function openRename(nid){
-  renameTarget=nid;
-  document.getElementById('renameInput').value=nid;
-  document.getElementById('renameOverlay').classList.add('vis');
-  setTimeout(function(){var i=document.getElementById('renameInput');i.select();i.focus();},60);
-}
-function renameConfirm(){
-  var newName=document.getElementById('renameInput').value.trim();
-  if(!newName||newName===renameTarget){renameCancel();return;}
-  if(nodes[newName]){alert('Já existe um vértice "'+newName+'".');return;}
-  snapshotForUndo();
-  edges.forEach(function(e){if(e.a===renameTarget)e.a=newName;if(e.b===renameTarget)e.b=newName;});
-  var n=nodes[renameTarget];n.id=newName;
-  nodes[newName]=n;delete nodes[renameTarget];
-  if(selectedNodes.has(renameTarget)){selectedNodes.delete(renameTarget);selectedNodes.add(newName);}
-  renameTarget=null;distCache=null;
-  if(edges.length)buildDistCache();
-  updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();
-  document.getElementById('renameOverlay').classList.remove('vis');draw();
-}
-function renameCancel(){
-  renameTarget=null;document.getElementById('renameOverlay').classList.remove('vis');
-}
-document.getElementById('renameInput').addEventListener('keydown',function(e){
-  if(e.key==='Enter'){e.preventDefault();renameConfirm();}
-  if(e.key==='Escape'){e.preventDefault();renameCancel();}
-});
-
-// ── DELETE ───────────────────────────────────────────
-function deleteSelected(){
-  if(!selectedNodes.size&&!selectedEdges.size)return;
-  snapshotForUndo();
-  var edgeIdxs=Array.from(selectedEdges).sort(function(a,b){return b-a;});
-  edgeIdxs.forEach(function(i){if(edges[i])edges.splice(i,1);});
-  selectedEdges.clear();
-  selectedNodes.forEach(function(nid){_deleteNodeImmediate(nid);});
-  selectedNodes.clear();
-  _rebuildDegrees();distCache=null;
-  _afterGraphChange();
-}
-function deleteNodeById(nid){
-  snapshotForUndo();_deleteNodeImmediate(nid);_rebuildDegrees();
-  distCache=null;_afterGraphChange();
-}
-function deleteEdgeByIndex(i){
-  snapshotForUndo();if(edges[i])edges.splice(i,1);_rebuildDegrees();
-  distCache=null;selectedEdges.delete(i);_afterGraphChange();
-}
-function _deleteNodeImmediate(nid){
-  for(var i=edges.length-1;i>=0;i--){if(edges[i].a===nid||edges[i].b===nid)edges.splice(i,1);}
-  delete nodes[nid];
-}
-function _rebuildDegrees(){
-  Object.values(nodes).forEach(function(n){n.degree=0;});
-  edges.forEach(function(e){if(nodes[e.a])nodes[e.a].degree++;if(nodes[e.b])nodes[e.b].degree++;});
-}
-function _afterGraphChange(){
-  var hasAnything=edges.length||Object.keys(nodes).length;
-  if(hasAnything){
-    if(edges.length)buildDistCache();
-    updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();draw();
-  } else {clearAll();}
-}
-
-// ── EDGE CREATION ────────────────────────────────────
-function finalizeAddEdge(src,dst,w){
-  snapshotForUndo();
-  var na=nodes[src],nb=nodes[dst];
-  var ang=0;
-  if(na&&nb&&na.x!==null&&nb.x!==null){
-    ang=((Math.atan2(nb.y-na.y,nb.x-na.x)*180/Math.PI)%360+360)%360;
-    ang=Math.round(ang/5)*5;
-  }
-  edges.push({a:src,b:dst,w:w,ang:ang});
-  nodes[src]=nodes[src]||{id:src,degree:0,x:0,y:0};
-  nodes[dst]=nodes[dst]||{id:dst,degree:0,x:0,y:0};
-  _rebuildDegrees();distCache=null;buildDistCache();
-  updateStats();updateEdgeList();updateAdjMatrix();updateDistMatrix();draw();
-}
-
-// ── CONTEXT MENU ────────────────────────────────────
-function closeCtxMenu(){document.getElementById('ctxmenu').style.display='none';}
-document.addEventListener('mousedown',function(e){
-  if(!document.getElementById('ctxmenu').contains(e.target))closeCtxMenu();
-},true);
 
 
 // ── TOOL SWITCHING ──────────────────────────────────
