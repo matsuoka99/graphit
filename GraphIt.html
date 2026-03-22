@@ -213,7 +213,7 @@ canvas{display:block;touch-action:none}
     <div class="lbl">Modo de Exibição</div>
     <div class="vtoggle">
       <button class="tb active" id="btnReal" onclick="setViewMode('real')" title="Distâncias proporcionais ao peso">&#128210; Escala Real</button>
-      <button class="tb" id="btnFit" onclick="setViewMode('fit')" title="Sem sobreposição">&#8862; Sem Sobreposição</button>
+      <button class="tb" id="btnFit" onclick="setViewMode('fit')" title="Todos os nós equidistantes — ignora pesos, mantém ângulos">&#9635; Equidistante</button>
     </div>
     <div class="trow">
       <button class="tb active" id="btnAngles" onclick="toggleAngles()">&#128065; Ângulos</button>
@@ -380,7 +380,6 @@ var edges=[],nodes={};
 var globalRot=0,flipH=false,flipV=false;
 var viewMode='real',showAngles=true,showWeights=true;
 var degThreshold=Infinity;
-var FIT_MIN_DIST=60;
 var showGrid=true;
 var scale=1,offX=0,offY=0;
 var istate='idle';
@@ -576,19 +575,35 @@ function computeRealLayout(){
     }
   });
 }
-function computeFitLayout(){
-  computeRealLayout();var arr=Object.values(nodes);var minD=FIT_MIN_DIST;
-  for(var it=0;it<300;it++){
-    var moved=false;
-    for(var i=0;i<arr.length;i++)for(var j=i+1;j<arr.length;j++){
-      var a=arr[i],b=arr[j],ddx=b.x-a.x,ddy=b.y-a.y,d=Math.hypot(ddx,ddy)||0.001;
-      if(d<minD){var push=(minD-d)/2+0.5,ux=ddx/d,uy=ddy/d;
-        a.x-=ux*push;a.y-=uy*push;b.x+=ux*push;b.y+=uy*push;moved=true;}
+// Equidistante: mesmo BFS do layout real, mas todas as arestas com distância fixa de 100 unidades.
+// Preserva os ângulos definidos — apenas ignora os pesos como distância.
+var EQUI_DIST=100; // distância fixa entre nós conectados
+function computeEquiLayout(){
+  // Temporarily override edgeDelta to use fixed distance
+  Object.values(nodes).forEach(function(n){n.x=null;n.y=null;});
+  var adj={};Object.keys(nodes).forEach(function(k){adj[k]=[];});
+  edges.forEach(function(e,i){adj[e.a].push(i);adj[e.b].push(i);});
+  Object.keys(nodes).forEach(function(start){
+    if(nodes[start].x!==null)return;
+    nodes[start].x=0;nodes[start].y=0;
+    var queue=[start],vis=new Set([start]);
+    while(queue.length){
+      var cur=queue.shift();
+      adj[cur].forEach(function(ei){
+        var e=edges[ei];
+        // Compute direction from angle only, distance = EQUI_DIST
+        var ang=((e.ang+globalRot)%360+360)%360;var rad=ang*Math.PI/180;
+        var dx=EQUI_DIST*Math.cos(rad),dy=EQUI_DIST*Math.sin(rad);
+        if(flipH)dx=-dx;if(flipV)dy=-dy;
+        var na=nodes[e.a],nb=nodes[e.b];var nbr=null,nx,ny;
+        if(e.a===cur&&!vis.has(e.b)){nbr=e.b;nx=na.x+dx;ny=na.y+dy;}
+        else if(e.b===cur&&!vis.has(e.a)){nbr=e.a;nx=nb.x-dx;ny=nb.y-dy;}
+        if(nbr!==null){nodes[nbr].x=nx;nodes[nbr].y=ny;vis.add(nbr);queue.push(nbr);}
+      });
     }
-    if(!moved)break;
-  }
+  });
 }
-function runLayout(){viewMode==='fit'?computeFitLayout():computeRealLayout();}
+function runLayout(){viewMode==='fit'?computeEquiLayout():computeRealLayout();}
 
 function w2s(wx,wy){return[wx*scale+offX,wy*scale+offY];}
 function s2w(sx,sy){return[(sx-offX)/scale,(sy-offY)/scale];}
