@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GraphIt — Suite de Testes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#111;color:#e0e0e0;font-family:'Space Mono',monospace;font-size:13px;line-height:1.7;padding:24px;max-width:900px;margin:0 auto}
+h1{font-family:'Syne',sans-serif;font-size:22px;color:#e87020;margin-bottom:4px}
+h2{font-family:'Syne',sans-serif;font-size:15px;color:#ff9944;margin:28px 0 10px;border-bottom:1px solid #333;padding-bottom:6px}
+h3{font-family:'Syne',sans-serif;font-size:12px;color:#aaa;margin:16px 0 6px;letter-spacing:1.5px;text-transform:uppercase}
+.subtitle{color:#666;font-size:11px;margin-bottom:28px}
+pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font-size:11px;line-height:1.8;overflow-x:auto;white-space:pre-wrap;word-break:break-all;position:relative}
+.copy-pre{position:absolute;top:8px;right:8px;background:#e87020;color:#000;border:none;border-radius:4px;padding:3px 9px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;cursor:pointer}
+.copy-pre:hover{filter:brightness(1.1)}
+.kw{color:#e87020}.str{color:#adff2f}.cm{color:#555}.fn{color:#00ffcc}.num{color:#ff9944}
+.checklist{list-style:none;padding:0}
+.checklist li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #1e1e1e;align-items:flex-start}
+.checklist li:last-child{border-bottom:none}
+.cb{width:18px;height:18px;border:2px solid #444;border-radius:4px;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all .15s}
+.cb:checked{accent-color:#e87020}
+.step{flex:1}
+.step .action{color:#e0e0e0}
+.step .expect{color:#888;font-size:11px}
+.tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:4px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+.tag.auto{background:#1a3a2a;color:#00ffcc;border:1px solid #00ffcc44}
+.tag.manual{background:#2a1a0a;color:#ff9944;border:1px solid #ff994444}
+.tag.tablet{background:#1a1a3a;color:#7c6aff;border:1px solid #7c6aff44}
+.section-note{background:#1a1a1a;border-left:3px solid #e87020;padding:8px 12px;font-size:11px;color:#888;border-radius:0 4px 4px 0;margin-bottom:12px}
+.progress{position:sticky;top:0;background:#111;padding:10px 0 14px;z-index:10;border-bottom:1px solid #222;margin-bottom:20px}
+.progress-bar-wrap{background:#1e1e1e;border-radius:4px;height:6px;margin-top:6px}
+.progress-bar{background:#e87020;height:6px;border-radius:4px;width:0%;transition:width .3s}
+.progress-text{font-size:10px;color:#666;margin-top:4px}
+@media print{body{background:#fff;color:#000;padding:12px}pre{border:1px solid #ccc;background:#f5f5f5;color:#000}.kw{color:#c44}.str{color:#060}.cm{color:#888}.fn{color:#007}.num{color:#a60}.copy-pre{display:none}.progress,.progress-bar-wrap{display:none}}
+</style>
+</head>
+<body>
+
+<div class="progress">
+  <span style="color:#e87020;font-family:'Syne',sans-serif;font-weight:700">GraphIt</span>
+  <span style="color:#555"> — Progresso do checklist manual</span>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="progress-text" id="progressText">0 de 0 itens marcados</div>
+</div>
+
+<h1>GraphIt — Suite de Testes</h1>
+<p class="subtitle">Script de console (automático) + Checklist manual interativo &nbsp;·&nbsp; <span style="color:#e87020">⎕ Auto</span> &nbsp;<span style="color:#ff9944">⎕ Manual</span> &nbsp;<span style="color:#7c6aff">⎕ Tablet</span></p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>① Script de Teste — Cole no Console do DevTools</h2>
+
+<div class="section-note">
+  Abra o GraphIt.html no browser → F12 → Console → cole o script abaixo e pressione Enter.<br>
+  O script testa toda a lógica interna sem precisar clicar em nada.
+</div>
+
+<pre id="consoleScript"><button class="copy-pre" onclick="copyScript()">Copiar</button><span class="cm">// ═══════════════════════════════════════════════════
+// GraphIt — Script de Teste Automático
+// Cole no Console do DevTools com GraphIt.html aberto
+// ═══════════════════════════════════════════════════</span>
+
+(<span class="kw">function</span>(){
+  <span class="kw">var</span> results = [], pass = <span class="num">0</span>, fail = <span class="num">0</span>;
+
+  <span class="kw">function</span> <span class="fn">ok</span>(name, cond, detail) {
+    <span class="kw">var</span> r = { name, ok: cond, detail: detail||<span class="str">''</span> };
+    results.push(r); cond ? pass++ : fail++;
+  }
+
+  <span class="kw">function</span> <span class="fn">section</span>(s) { results.push({ section: s }); }
+
+  <span class="cm">// ─── 1. ESTADO INICIAL ───────────────────────────</span>
+  section(<span class="str">'1. Estado inicial'</span>);
+  ok(<span class="str">'edges vazio'</span>, Array.isArray(edges) && edges.length === <span class="num">0</span>);
+  ok(<span class="str">'nodes vazio'</span>, typeof nodes === <span class="str">'object'</span> && Object.keys(nodes).length === <span class="num">0</span>);
+  ok(<span class="str">'canvas existe'</span>, !!document.getElementById(<span class="str">'gc'</span>));
+  ok(<span class="str">'scale > 0'</span>, scale > <span class="num">0</span>);
+  ok(<span class="str">'tema padrão grafite'</span>, document.body.classList.contains(<span class="str">'theme-graphite'</span>));
+
+  <span class="cm">// ─── 2. PARSE & RENDERIZAR ───────────────────────</span>
+  section(<span class="str">'2. Parse e Renderizar'</span>);
+  document.getElementById(<span class="str">'inputArea'</span>).value =
+    <span class="str">'A | B | 10 | 0\nB | C | 20 | 90\nC | A | 15 | 180'</span>;
+  parseAndRender();
+  ok(<span class="str">'3 arestas parseadas'</span>, edges.length === <span class="num">3</span>);
+  ok(<span class="str">'3 vértices criados'</span>, Object.keys(nodes).length === <span class="num">3</span>);
+  ok(<span class="str">'vértice A existe'</span>, !!nodes[<span class="str">'A'</span>]);
+  ok(<span class="str">'vértice B existe'</span>, !!nodes[<span class="str">'B'</span>]);
+  ok(<span class="str">'vértice C existe'</span>, !!nodes[<span class="str">'C'</span>]);
+  ok(<span class="str">'peso da aresta A-B = 10'</span>, edges[<span class="num">0</span>].w === <span class="num">10</span>);
+  ok(<span class="str">'ângulo da aresta A-B = 0'</span>, edges[<span class="num">0</span>].ang === <span class="num">0</span>);
+  ok(<span class="str">'grau de B = 2'</span>, nodes[<span class="str">'B'</span>].degree === <span class="num">2</span>);
+  ok(<span class="str">'posições calculadas (A.x != null)'</span>, nodes[<span class="str">'A'</span>].x !== null);
+
+  <span class="cm">// ─── 3. DISTÂNCIAS (DIJKSTRA) ────────────────────</span>
+  section(<span class="str">'3. Dijkstra'</span>);
+  buildDistCache();
+  ok(<span class="str">'distCache criado'</span>, !!distCache);
+  ok(<span class="str">'dist A→A = 0'</span>, distCache.dist[<span class="str">'A'</span>][<span class="str">'A'</span>] === <span class="num">0</span>);
+  ok(<span class="str">'dist A→B = 10'</span>, distCache.dist[<span class="str">'A'</span>][<span class="str">'B'</span>] === <span class="num">10</span>);
+  ok(<span class="str">'dist A→C = 15 (direto) ou 30 (via B)'</span>, distCache.dist[<span class="str">'A'</span>][<span class="str">'C'</span>] === <span class="num">15</span>);
+  ok(<span class="str">'dist B→C = 20'</span>, distCache.dist[<span class="str">'B'</span>][<span class="str">'C'</span>] === <span class="num">20</span>);
+  ok(<span class="str">'caminho A→C reconstruído'</span>, (<span class="kw">function</span>(){
+    <span class="kw">var</span> p = reconstructPath(<span class="str">'A'</span>,<span class="str">'C'</span>); <span class="kw">return</span> Array.isArray(p) && p[<span class="num">0</span>]===<span class="str">'A'</span> && p[p.length-<span class="num">1</span>]===<span class="str">'C'</span>;
+  })());
+
+  <span class="cm">// ─── 4. ADD VÉRTICE (PROGRAMÁTICO) ───────────────</span>
+  section(<span class="str">'4. Add Vértice'</span>);
+  <span class="kw">var</span> nBefore = Object.keys(nodes).length;
+  addNodeAt(<span class="num">100</span>, <span class="num">100</span>);
+  ok(<span class="str">'addNodeAt cria vértice'</span>, Object.keys(nodes).length === nBefore + <span class="num">1</span>);
+  <span class="kw">var</span> newId = Object.keys(nodes).find(<span class="kw">function</span>(k){ <span class="kw">return</span> nodes[k].x === <span class="num">100</span>; });
+  ok(<span class="str">'posição correta (x=100)'</span>, !!newId && nodes[newId].x === <span class="num">100</span>);
+  ok(<span class="str">'posição correta (y=100)'</span>, !!newId && nodes[newId].y === <span class="num">100</span>);
+
+  <span class="cm">// ─── 5. ADD ARESTA ───────────────────────────────</span>
+  section(<span class="str">'5. Add Aresta'</span>);
+  <span class="kw">var</span> eBefore = edges.length;
+  finalizeAddEdge(<span class="str">'A'</span>, <span class="str">'B'</span>, <span class="num">99</span>);
+  ok(<span class="str">'finalizeAddEdge adiciona aresta'</span>, edges.length === eBefore + <span class="num">1</span>);
+  ok(<span class="str">'peso correto'</span>, edges[edges.length-<span class="num">1</span>].w === <span class="num">99</span>);
+  ok(<span class="str">'vértices corretos'</span>, edges[edges.length-<span class="num">1</span>].a === <span class="str">'A'</span> && edges[edges.length-<span class="num">1</span>].b === <span class="str">'B'</span>);
+
+  <span class="cm">// ─── 6. DELETE ────────────────────────────────────</span>
+  section(<span class="str">'6. Delete'</span>);
+  <span class="kw">var</span> eCount = edges.length;
+  deleteEdgeByIndex(<span class="num">0</span>);
+  ok(<span class="str">'deleteEdgeByIndex remove aresta'</span>, edges.length === eCount - <span class="num">1</span>);
+  <span class="kw">var</span> nCount = Object.keys(nodes).length;
+  deleteNodeById(<span class="str">'B'</span>);
+  ok(<span class="str">'deleteNodeById remove vértice'</span>, !nodes[<span class="str">'B'</span>]);
+  ok(<span class="str">'deleteNodeById remove arestas ligadas'</span>, edges.every(<span class="kw">function</span>(e){ <span class="kw">return</span> e.a !== <span class="str">'B'</span> && e.b !== <span class="str">'B'</span>; }));
+
+  <span class="cm">// ─── 7. UNDO ──────────────────────────────────────</span>
+  section(<span class="str">'7. Undo'</span>);
+  <span class="kw">var</span> stackBefore = undoStack.length;
+  snapshotForUndo();
+  ok(<span class="str">'snapshotForUndo empilha'</span>, undoStack.length === stackBefore + <span class="num">1</span>);
+  <span class="cm">// Restore original state for remaining tests</span>
+  document.getElementById(<span class="str">'inputArea'</span>).value =
+    <span class="str">'A | B | 10 | 0\nB | C | 20 | 90\nC | A | 15 | 180'</span>;
+  parseAndRender();
+
+  <span class="cm">// ─── 8. RENOMEAR ──────────────────────────────────</span>
+  section(<span class="str">'8. Renomear'</span>);
+  document.getElementById(<span class="str">'renameInput'</span>).value = <span class="str">'X'</span>;
+  renameTarget = <span class="str">'A'</span>;
+  renameConfirm();
+  ok(<span class="str">'A renomeado para X'</span>, !!nodes[<span class="str">'X'</span>] && !nodes[<span class="str">'A'</span>]);
+  ok(<span class="str">'aresta atualizada para X'</span>, edges.some(<span class="kw">function</span>(e){ <span class="kw">return</span> e.a === <span class="str">'X'</span> || e.b === <span class="str">'X'</span>; }));
+  <span class="cm">// Rename back</span>
+  document.getElementById(<span class="str">'renameInput'</span>).value = <span class="str">'A'</span>;
+  renameTarget = <span class="str">'X'</span>;
+  renameConfirm();
+
+  <span class="cm">// ─── 9. SALVAR / CARREGAR ─────────────────────────</span>
+  section(<span class="str">'9. Salvar/Carregar'</span>);
+  switchTab(<span class="str">'save'</span>);
+  saveGraph();
+  <span class="kw">var</span> saved = document.getElementById(<span class="str">'saveOutput'</span>).value;
+  ok(<span class="str">'saveGraph gera string'</span>, saved.startsWith(<span class="str">'{'</span>) && saved.endsWith(<span class="str">'}'</span>));
+  ok(<span class="str">'string contém blocos []'</span>, saved.includes(<span class="str">'['</span>) && saved.includes(<span class="str">';'</span>));
+  <span class="cm">// Parse de volta</span>
+  clearAll();
+  ok(<span class="str">'clearAll limpa grafo'</span>, edges.length === <span class="num">0</span>);
+  document.getElementById(<span class="str">'loadInput'</span>).value = saved;
+  loadGraph();
+  ok(<span class="str">'loadGraph restaura 3 arestas'</span>, edges.length === <span class="num">3</span>);
+  ok(<span class="str">'loadGraph restaura 3 vértices'</span>, Object.keys(nodes).length === <span class="num">3</span>);
+  <span class="cm">// Testar string inválida</span>
+  document.getElementById(<span class="str">'loadInput'</span>).value = <span class="str">'lixo sem formato'</span>;
+  loadGraph();
+  ok(<span class="str">'loadGraph rejeita string inválida'</span>, !!document.getElementById(<span class="str">'loadErr'</span>).textContent);
+
+  <span class="cm">// ─── 10. DIJKSTRA — CALCULAR MEDIDAS ─────────────</span>
+  section(<span class="str">'10. Calcular Medidas'</span>);
+  document.getElementById(<span class="str">'spInput'</span>).value = <span class="str">'A | C\nB | A'</span>;
+  switchTab(<span class="str">'measures'</span>);
+  runShortestPaths();
+  <span class="kw">var</span> rows = document.querySelectorAll(<span class="str">'#spResult .sp-row'</span>);
+  ok(<span class="str">'2 resultados calculados'</span>, rows.length === <span class="num">2</span>);
+  ok(<span class="str">'resultado A→C presente'</span>, document.getElementById(<span class="str">'spResult'</span>).textContent.includes(<span class="str">'A'</span>));
+  <span class="cm">// TSV format</span>
+  document.getElementById(<span class="str">'spInput'</span>).value = <span class="str">'A\tC'</span>;
+  runShortestPaths();
+  ok(<span class="str">'formato TSV aceito'</span>, document.querySelectorAll(<span class="str">'#spResult .sp-row'</span>).length === <span class="num">1</span>);
+
+  <span class="cm">// ─── 11. TRANSFORMAÇÕES ───────────────────────────</span>
+  section(<span class="str">'11. Transformações'</span>);
+  <span class="kw">var</span> rot0 = globalRot;
+  rotate(<span class="num">90</span>);
+  ok(<span class="str">'rotate(90) funciona'</span>, globalRot === (rot0 + <span class="num">90</span>) % <span class="num">360</span>);
+  rotate(<span class="num">-90</span>);
+  ok(<span class="str">'rotate(-90) reverte'</span>, globalRot === rot0);
+  toggleFlip(<span class="str">'H'</span>);
+  ok(<span class="str">'flipH ativado'</span>, flipH === <span class="kw">true</span>);
+  toggleFlip(<span class="str">'H'</span>);
+  ok(<span class="str">'flipH desativado'</span>, flipH === <span class="kw">false</span>);
+  resetTransforms();
+  ok(<span class="str">'resetTransforms zera tudo'</span>, globalRot === <span class="num">0</span> && !flipH && !flipV);
+
+  <span class="cm">// ─── 12. MODO DE EXIBIÇÃO ─────────────────────────</span>
+  section(<span class="str">'12. Modo de Exibição'</span>);
+  setViewMode(<span class="str">'fit'</span>);
+  ok(<span class="str">'setViewMode fit'</span>, viewMode === <span class="str">'fit'</span>);
+  setViewMode(<span class="str">'real'</span>);
+  ok(<span class="str">'setViewMode real'</span>, viewMode === <span class="str">'real'</span>);
+  toggleAngles();
+  ok(<span class="str">'toggleAngles desliga'</span>, showAngles === <span class="kw">false</span>);
+  toggleAngles();
+  ok(<span class="str">'toggleAngles religa'</span>, showAngles === <span class="kw">true</span>);
+  toggleGrid();
+  ok(<span class="str">'toggleGrid desliga'</span>, showGrid === <span class="kw">false</span>);
+  toggleGrid();
+  ok(<span class="str">'toggleGrid religa'</span>, showGrid === <span class="kw">true</span>);
+
+  <span class="cm">// ─── 13. FERRAMENTAS ──────────────────────────────</span>
+  section(<span class="str">'13. Ferramentas'</span>);
+  setTool(<span class="str">'addNode'</span>);
+  ok(<span class="str">'setTool addNode'</span>, currentTool === <span class="str">'addNode'</span>);
+  ok(<span class="str">'botão addNode ativo'</span>, document.getElementById(<span class="str">'toolAddNode'</span>).classList.contains(<span class="str">'active'</span>));
+  setTool(<span class="str">'addEdge'</span>);
+  ok(<span class="str">'setTool addEdge'</span>, currentTool === <span class="str">'addEdge'</span>);
+  ok(<span class="str">'helper panel visível'</span>, document.getElementById(<span class="str">'helperPanel'</span>).style.display !== <span class="str">'none'</span>);
+  setTool(<span class="str">'select'</span>);
+  ok(<span class="str">'setTool select'</span>, currentTool === <span class="str">'select'</span>);
+
+  <span class="cm">// ─── 14. SLOTS DE PESO ────────────────────────────</span>
+  section(<span class="str">'14. Slots de Peso'</span>);
+  weightSlots = [<span class="kw">null</span>,<span class="kw">null</span>,<span class="kw">null</span>,<span class="kw">null</span>];
+  document.getElementById(<span class="str">'modalWeightInput'</span>).value = <span class="str">'42'</span>;
+  saveToSlot(<span class="num">0</span>);
+  ok(<span class="str">'saveToSlot salva valor'</span>, weightSlots[<span class="num">0</span>] === <span class="num">42</span>);
+  activeSlot = -<span class="num">1</span>;
+  pickSlot(<span class="num">0</span>);
+  ok(<span class="str">'pickSlot ativa slot'</span>, activeSlot === <span class="num">0</span>);
+  pickSlot(<span class="num">0</span>);
+  ok(<span class="str">'pickSlot desativa slot'</span>, activeSlot === -<span class="num">1</span>);
+
+  <span class="cm">// ─── 15. TEMA ─────────────────────────────────────</span>
+  section(<span class="str">'15. Tema'</span>);
+  setTheme(<span class="str">'dark'</span>);
+  ok(<span class="str">'tema dark aplicado'</span>, document.body.classList.contains(<span class="str">'theme-dark'</span>));
+  ok(<span class="str">'COLORS trocado'</span>, COLORS === COLORS_DARK);
+  setTheme(<span class="str">'graphite'</span>);
+  ok(<span class="str">'tema grafite restaurado'</span>, document.body.classList.contains(<span class="str">'theme-graphite'</span>));
+
+  <span class="cm">// ─── 16. SELEÇÃO ──────────────────────────────────</span>
+  section(<span class="str">'16. Seleção'</span>);
+  selectedNodes.clear(); selectedEdges.clear();
+  selectedNodes.add(<span class="str">'A'</span>); selectedNodes.add(<span class="str">'C'</span>);
+  deleteSelected();
+  ok(<span class="str">'deleteSelected remove vértices selecionados'</span>, !nodes[<span class="str">'A'</span>] && !nodes[<span class="str">'C'</span>]);
+
+  <span class="cm">// ─── RESULTADO FINAL ──────────────────────────────</span>
+  console.log(<span class="str">'%c\n════════════════════════════════\n GRAPHIT — RESULTADO DOS TESTES\n════════════════════════════════'</span>,
+    <span class="str">'color:#e87020;font-weight:bold;font-size:13px'</span>);
+  results.forEach(<span class="kw">function</span>(r){
+    <span class="kw">if</span>(r.section){
+      console.log(<span class="str">'%c── '</span>+r.section, <span class="str">'color:#666;font-style:italic'</span>); <span class="kw">return</span>;
+    }
+    <span class="kw">var</span> icon = r.ok ? <span class="str">'✅'</span> : <span class="str">'❌'</span>;
+    <span class="kw">var</span> style = r.ok ? <span class="str">'color:#aaa'</span> : <span class="str">'color:#ff5555;font-weight:bold'</span>;
+    console.log(<span class="str">'%c'</span>+icon+<span class="str">' '</span>+r.name+(r.detail?<span class="str">' → '</span>+r.detail:<span class="str">''</span>), style);
+  });
+  <span class="kw">var</span> pct = Math.round(pass/(pass+fail)*<span class="num">100</span>);
+  console.log(<span class="str">'%c\n'</span>+pass+<span class="str">'/'</span>+(pass+fail)+<span class="str">' testes passaram ('</span>+pct+<span class="str">'%)'</span>,
+    fail===<span class="num">0</span>?<span class="str">'color:#00ffcc;font-size:14px;font-weight:bold'</span>:<span class="str">'color:#ff5555;font-size:14px;font-weight:bold'</span>);
+  <span class="kw">if</span>(fail > <span class="num">0</span>)
+    console.log(<span class="str">'%c⚠ Testes com falha: '</span>+results.filter(<span class="kw">function</span>(r){<span class="kw">return</span> !r.section&&!r.ok;}).map(<span class="kw">function</span>(r){<span class="kw">return</span> r.name;}).join(<span class="str">', '</span>),
+      <span class="str">'color:#ff9944'</span>);
+})();</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>② Checklist Manual</h2>
+<p style="font-size:11px;color:#555;margin-bottom:16px">Marque cada item após testar. O progresso é salvo na sessão.</p>
+
+<!-- RENDERIZAÇÃO -->
+<h3>Renderização</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Colar arestas no campo "Adicionar Arestas" e clicar em Renderizar</span><br><span class="expect">→ Grafo aparece na tela com nós e arestas visíveis</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Exemplo" e renderizar</span><br><span class="expect">→ Grafo de exemplo carrega corretamente</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Limpar"</span><br><span class="expect">→ Canvas limpa, estatísticas voltam a zero</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Trocar tema (Grafite ↔ Neon)</span><br><span class="expect">→ Cores mudam em tempo real sem perder o grafo</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Alternar entre "Escala Real" e "Sem Sobreposição"</span><br><span class="expect">→ Layout muda, nós se reorganizam</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Desativar e reativar "Guias", "Ângulos", "Pesos"</span><br><span class="expect">→ Cada toggle funciona independentemente</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ajustar o slider "Ocultar vértices com grau &gt;"</span><br><span class="expect">→ Vértices de alto grau somem, arestas permanecem</span></div></li>
+</ul>
+
+<!-- NAVEGAÇÃO -->
+<h3>Navegação no Canvas</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Arrastar o fundo do canvas</span><br><span class="expect">→ Pan suave, grafo se move com o mouse</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Scroll do mouse sobre o canvas</span><br><span class="expect">→ Zoom centrado no cursor</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em ⌖ (Ajustar à tela) e apertar Espaço</span><br><span class="expect">→ Grafo centraliza e cabe na tela</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Rotacionar e inverter o grafo, verificar indicador</span><br><span class="expect">→ Indicador ↺ aparece no canto superior direito</span></div></li>
+</ul>
+
+<!-- FERRAMENTAS DE EDIÇÃO -->
+<h3>Ferramentas de Edição</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ferramenta Add Vértice → clicar na tela</span><br><span class="expect">→ Vértice numerado aparece onde clicou</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ferramenta Add Vértice → clicar e arrastar</span><br><span class="expect">→ Apenas pan, nenhum vértice criado durante o arrasto</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ferramenta Add Aresta → clicar vértice A, clicar vértice B</span><br><span class="expect">→ Modal de peso abre; após confirmar, aresta aparece</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Add Aresta com slot: salvar peso no modal, ativar "Usar peso salvo"</span><br><span class="expect">→ Próxima aresta usa o peso do slot sem abrir modal</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ferramenta Selecionar → clicar em vértice e arrastar</span><br><span class="expect">→ Vértice se move; outros ficam no lugar</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Shift + arrastar no canvas vazio</span><br><span class="expect">→ Retângulo de seleção aparece; vértices/arestas dentro ficam selecionados</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Selecionar vértice(s) e apertar Delete</span><br><span class="expect">→ Vértice(s) e suas arestas são removidos</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Apertar Esc com algo selecionado</span><br><span class="expect">→ Seleção limpa. Esc novamente volta para ferramenta Selecionar</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em vértice → Renomear</span><br><span class="expect">→ Modal abre; após confirmar, nome atualiza no canvas e nas arestas</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em vértice → Excluir</span><br><span class="expect">→ Vértice e arestas ligadas removidos</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em aresta → Editar peso</span><br><span class="expect">→ Modal abre com peso atual; atualiza após confirmar</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ctrl+Z após cada operação de edição</span><br><span class="expect">→ Undo desfaz a última ação</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Helper panel: desativar "Selecionar vértices", clicar em vértice</span><br><span class="expect">→ Clique no vértice não o seleciona (apenas pan)</span></div></li>
+</ul>
+
+<!-- CALCULAR MEDIDAS -->
+<h3>Calcular Medidas</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Aba "Calcular Medidas" → inserir par "A | C" e calcular</span><br><span class="expect">→ Distância e caminho exibidos corretamente</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Colar par no formato TSV (tab entre vértices)</span><br><span class="expect">→ Reconhecido e calculado igual ao formato com pipe</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Copiar resultados"</span><br><span class="expect">→ Só as distâncias numéricas são copiadas (sem pares, sem caminhos)</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Verificar "Matriz de Distâncias" na sidebar</span><br><span class="expect">→ Tabela completa de distâncias aparece; "Copiar TSV" funciona</span></div></li>
+</ul>
+
+<!-- SALVAR / CARREGAR -->
+<h3>Salvar / Carregar</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Aba "Salvar/Carregar" → clicar em "Salvar"</span><br><span class="expect">→ String no formato {[A;B;10;0],...} aparece no campo</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Copiar" após salvar</span><br><span class="expect">→ String copiada para clipboard (ou modal de fallback)</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Limpar grafo → colar string salva → "Carregar"</span><br><span class="expect">→ Grafo recriado igual ao original</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Testar ângulo: rotar grafo 90° → salvar → carregar</span><br><span class="expect">→ Ângulo visual está baked na string; grafo carregado tem orientação correta</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Tentar carregar string inválida (ex: "abc")</span><br><span class="expect">→ Mensagem de erro aparece, grafo não é alterado</span></div></li>
+</ul>
+
+<!-- TABLET & S PEN -->
+<h3>Tablet e S Pen</h3>
+<ul class="checklist">
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">1 dedo arrastar no canvas</span><br><span class="expect">→ Pan suave sem zoom acidental</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">2 dedos pinch (aproximar e afastar)</span><br><span class="expect">→ Zoom centrado entre os dedos; pan simultâneo funciona</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">S Pen: tocar em vértice e arrastar</span><br><span class="expect">→ Vértice se move com a caneta</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">S Pen: usar ferramenta Add Vértice, tocar na tela</span><br><span class="expect">→ Vértice criado onde tocou</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">S Pen: usar ferramenta Add Aresta, tocar dois vértices</span><br><span class="expect">→ Modal de peso abre; aresta criada após confirmar</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">Botões da sidebar respondem ao toque</span><br><span class="expect">→ Tabs, toggles e botões funcionam no touch</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag tablet">Tablet</span><span class="action">Copiar/colar no tablet</span><br><span class="expect">→ Se a API estiver bloqueada, modal de fallback abre com texto para copiar/colar manualmente</span></div></li>
+</ul>
+
+<p style="margin-top:32px;font-size:10px;color:#444;text-align:center">GraphIt Test Suite · Esta página pode ser impressa com Ctrl+P para checklist em papel</p>
+
+<script>
+function updateProgress(){
+  var all=document.querySelectorAll('.cb');
+  var checked=document.querySelectorAll('.cb:checked');
+  var pct=all.length?Math.round(checked.length/all.length*100):0;
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressText').textContent=
+    checked.length+' de '+all.length+' itens marcados ('+pct+'%)';
+}
+updateProgress();
+
+function copyScript(){
+  var text=document.getElementById('consoleScript').innerText
+    .replace(/^Copiar\n/,''); // remove button text
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      var b=document.querySelector('.copy-pre');
+      b.textContent='✓ Copiado!';
+      setTimeout(function(){b.textContent='Copiar';},1500);
+    });
+  } else {
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.style.cssText='position:fixed;top:-9999px';
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    var b=document.querySelector('.copy-pre');
+    b.textContent='✓ Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);
+  }
+}
+</script>
+</body>
+</html>
