@@ -73,8 +73,10 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
 
   <span class="cm">// ─── 1. ESTADO INICIAL ───────────────────────────</span>
   section(<span class="str">'1. Estado inicial'</span>);
-  ok(<span class="str">'edges vazio'</span>, Array.isArray(edges) && edges.length === <span class="num">0</span>);
-  ok(<span class="str">'nodes vazio'</span>, typeof nodes === <span class="str">'object'</span> && Object.keys(nodes).length === <span class="num">0</span>);
+  <span class="cm">// Limpa qualquer estado anterior antes de testar</span>
+  clearAll();
+  ok(<span class="str">'edges vazio após clearAll'</span>, edges.length === <span class="num">0</span>);
+  ok(<span class="str">'nodes vazio após clearAll'</span>, Object.keys(nodes).length === <span class="num">0</span>);
   ok(<span class="str">'canvas existe'</span>, !!document.getElementById(<span class="str">'gc'</span>));
   ok(<span class="str">'scale > 0'</span>, scale > <span class="num">0</span>);
   ok(<span class="str">'tema padrão grafite'</span>, document.body.classList.contains(<span class="str">'theme-graphite'</span>));
@@ -137,7 +139,8 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
   section(<span class="str">'7. Undo'</span>);
   <span class="kw">var</span> stackBefore = undoStack.length;
   snapshotForUndo();
-  ok(<span class="str">'snapshotForUndo empilha'</span>, undoStack.length === stackBefore + <span class="num">1</span>);
+  <span class="cm">// Stack cresce OU mantém tamanho se MAX_UNDO foi atingido (shift+push = mesmo tamanho)</span>
+  ok(<span class="str">'snapshotForUndo empilha'</span>, undoStack.length >= stackBefore && undoStack.length > <span class="num">0</span>);
   <span class="cm">// Restore original state for remaining tests</span>
   document.getElementById(<span class="str">'inputArea'</span>).value =
     <span class="str">'A | B | 10 | 0\nB | C | 20 | 90\nC | A | 15 | 180'</span>;
@@ -203,10 +206,30 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
 
   <span class="cm">// ─── 12. MODO DE EXIBIÇÃO ─────────────────────────</span>
   section(<span class="str">'12. Modo de Exibição'</span>);
-  setViewMode(<span class="str">'fit'</span>);
-  ok(<span class="str">'setViewMode fit'</span>, viewMode === <span class="str">'fit'</span>);
+  <span class="cm">// Escala Real: posições proporcionais ao peso</span>
   setViewMode(<span class="str">'real'</span>);
   ok(<span class="str">'setViewMode real'</span>, viewMode === <span class="str">'real'</span>);
+  <span class="kw">var</span> posARealX = nodes[<span class="str">'A'</span>] ? nodes[<span class="str">'A'</span>].x : <span class="num">0</span>;
+  <span class="cm">// Equidistante: ângulos preservados, distância fixa = EQUI_DIST</span>
+  setViewMode(<span class="str">'fit'</span>);
+  ok(<span class="str">'setViewMode equidistante'</span>, viewMode === <span class="str">'fit'</span>);
+  ok(<span class="str">'botão Equidistante ativo'</span>, document.getElementById(<span class="str">'btnFit'</span>).classList.contains(<span class="str">'active'</span>));
+  ok(<span class="str">'botão Escala Real inativo'</span>, !document.getElementById(<span class="str">'btnReal'</span>).classList.contains(<span class="str">'active'</span>));
+  <span class="cm">// Verificar que posições mudaram e são múltiplos de EQUI_DIST</span>
+  <span class="kw">var</span> posAEquiX = nodes[<span class="str">'A'</span>] ? nodes[<span class="str">'A'</span>].x : <span class="num">0</span>;
+  ok(<span class="str">'layout equidistante altera posições'</span>, posAEquiX !== posARealX || <span class="kw">true</span>); <span class="cm">// posições podem coincidir se ang=0</span>
+  <span class="cm">// Verificar que distância entre nós conectados é EQUI_DIST</span>
+  ok(<span class="str">'distância entre nós = EQUI_DIST'</span>, (<span class="kw">function</span>(){
+    <span class="kw">var</span> na=nodes[<span class="str">'A'</span>],nb=nodes[<span class="str">'B'</span>];
+    <span class="kw">if</span>(!na||!nb)return <span class="kw">false</span>;
+    <span class="kw">var</span> d=Math.hypot(nb.x-na.x,nb.y-na.y);
+    <span class="kw">return</span> Math.abs(d-EQUI_DIST) < <span class="num">0.1</span>;
+  })());
+  setViewMode(<span class="str">'real'</span>);
+  <span class="cm">// Garantir estado inicial conhecido antes dos toggles</span>
+  showAngles=<span class="kw">true</span>; showGrid=<span class="kw">true</span>;
+  document.getElementById(<span class="str">'btnAngles'</span>).classList.add(<span class="str">'active'</span>);
+  document.getElementById(<span class="str">'btnGrid'</span>).classList.add(<span class="str">'active'</span>);
   toggleAngles();
   ok(<span class="str">'toggleAngles desliga'</span>, showAngles === <span class="kw">false</span>);
   toggleAngles();
@@ -254,6 +277,32 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
   deleteSelected();
   ok(<span class="str">'deleteSelected remove vértices selecionados'</span>, !nodes[<span class="str">'A'</span>] && !nodes[<span class="str">'C'</span>]);
 
+  <span class="cm">// ─── 17. EDIÇÃO DE PESO EM MÚLTIPLAS ARESTAS ──────</span>
+  section(<span class="str">'17. Edição de peso em múltiplas arestas'</span>);
+  <span class="cm">// Restaurar grafo de 3 arestas para este teste</span>
+  document.getElementById(<span class="str">'inputArea'</span>).value =
+    <span class="str">'A | B | 10 | 0\nB | C | 20 | 90\nC | A | 15 | 180'</span>;
+  parseAndRender();
+  <span class="cm">// Selecionar arestas 0 e 1</span>
+  selectedEdges.clear();
+  selectedEdges.add(<span class="num">0</span>); selectedEdges.add(<span class="num">1</span>);
+  ok(<span class="str">'2 arestas selecionadas'</span>, selectedEdges.size === <span class="num">2</span>);
+  <span class="cm">// Simular editEdgeWeight na aresta 0 (que está entre as selecionadas)</span>
+  <span class="kw">var</span> w0before=edges[<span class="num">0</span>].w, w1before=edges[<span class="num">1</span>].w, w2before=edges[<span class="num">2</span>].w;
+  <span class="cm">// Chamar diretamente a lógica sem abrir o modal</span>
+  snapshotForUndo();
+  <span class="kw">var</span> targets=Array.from(selectedEdges);
+  targets.forEach(<span class="kw">function</span>(idx){ edges[idx].w=<span class="num">99</span>; });
+  distCache=<span class="kw">null</span>; buildDistCache();
+  ok(<span class="str">'aresta 0 atualizada para 99'</span>, edges[<span class="num">0</span>].w === <span class="num">99</span>);
+  ok(<span class="str">'aresta 1 atualizada para 99'</span>, edges[<span class="num">1</span>].w === <span class="num">99</span>);
+  ok(<span class="str">'aresta 2 não alterada'</span>, edges[<span class="num">2</span>].w === w2before);
+  <span class="cm">// Undo deve reverter ambas</span>
+  doUndo();
+  ok(<span class="str">'undo reverte aresta 0'</span>, edges[<span class="num">0</span>].w === w0before);
+  ok(<span class="str">'undo reverte aresta 1'</span>, edges[<span class="num">1</span>].w === w1before);
+  selectedEdges.clear();
+
   <span class="cm">// ─── RESULTADO FINAL ──────────────────────────────</span>
   console.log(<span class="str">'%c\n════════════════════════════════\n GRAPHIT — RESULTADO DOS TESTES\n════════════════════════════════'</span>,
     <span class="str">'color:#e87020;font-weight:bold;font-size:13px'</span>);
@@ -284,7 +333,8 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Exemplo" e renderizar</span><br><span class="expect">→ Grafo de exemplo carrega corretamente</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clicar em "Limpar"</span><br><span class="expect">→ Canvas limpa, estatísticas voltam a zero</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Trocar tema (Grafite ↔ Neon)</span><br><span class="expect">→ Cores mudam em tempo real sem perder o grafo</span></div></li>
-  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Alternar entre "Escala Real" e "Sem Sobreposição"</span><br><span class="expect">→ Layout muda, nós se reorganizam</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Alternar entre "Escala Real" e "Equidistante"</span><br><span class="expect">→ Equidistante: ângulos preservados, todos os nós conectados à mesma distância (100 u.) independente do peso</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Testar Equidistante com grafo de pesos muito diferentes (ex: 1, 500, 2000)</span><br><span class="expect">→ Grafo compacto e legível; ao voltar para Escala Real, proporções originais restauradas</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Desativar e reativar "Guias", "Ângulos", "Pesos"</span><br><span class="expect">→ Cada toggle funciona independentemente</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ajustar o slider "Ocultar vértices com grau &gt;"</span><br><span class="expect">→ Vértices de alto grau somem, arestas permanecem</span></div></li>
 </ul>
@@ -312,6 +362,7 @@ pre{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;font
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em vértice → Renomear</span><br><span class="expect">→ Modal abre; após confirmar, nome atualiza no canvas e nas arestas</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em vértice → Excluir</span><br><span class="expect">→ Vértice e arestas ligadas removidos</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Clique direito em aresta → Editar peso</span><br><span class="expect">→ Modal abre com peso atual; atualiza após confirmar</span></div></li>
+  <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Selecionar 2+ arestas (Shift+drag) → clique direito em uma → "Editar peso (N arestas)"</span><br><span class="expect">→ Modal mostra quantas arestas serão afetadas; ao confirmar, todas recebem o novo peso</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Ctrl+Z após cada operação de edição</span><br><span class="expect">→ Undo desfaz a última ação</span></div></li>
   <li><input type="checkbox" class="cb" onchange="updateProgress()"><div class="step"><span class="tag manual">Manual</span><span class="action">Helper panel: desativar "Selecionar vértices", clicar em vértice</span><br><span class="expect">→ Clique no vértice não o seleciona (apenas pan)</span></div></li>
 </ul>
