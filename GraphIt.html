@@ -164,7 +164,7 @@ canvas{display:block;touch-action:none}
   </div>
   <!-- Edges panel -->
   <div id="panelEdges" class="sb">
-    <div class="hint">Formato: <code>A | B | Peso | Ângulo</code><br>0°=dir 90°=baixo 180°=esq 270°=cima. <code>Ctrl+Enter</code> renderiza.</div>
+    <div class="hint">Formato: <code>A | B | Peso | Ângulo</code><br>0°=dir 90°=cima 180°=esq 270°=baixo. <code>Ctrl+Enter</code> renderiza.</div>
     <textarea id="inputArea" style="height:130px" placeholder="A | B | 10 | 0&#10;B | C | 50 | 90&#10;C | A | 30 | 180"></textarea>
     <div class="err" id="errMsg"></div>
     <div class="brow">
@@ -226,6 +226,12 @@ canvas{display:block;touch-action:none}
       <span class="slider-val" id="degVal">&#8734;</span>
     </div>
     <div style="font-size:9px;color:var(--muted);margin-top:3px" id="hiddenCount"></div>
+    <div class="tlbl" style="margin-top:8px">Tamanho da fonte</div>
+    <div class="slider-row">
+      <input type="range" id="fontSlider" min="50" max="300" value="100" step="10" oninput="onFontSlider(this.value)">
+      <span class="slider-val" id="fontVal">1×</span>
+      <button class="tb bs" style="font-size:9px;padding:0 6px;height:22px;margin-left:2px" onclick="resetFontScale()">↺</button>
+    </div>
   </div>
   <!-- Transforms -->
   <div class="sb">
@@ -381,6 +387,7 @@ var globalRot=0,flipH=false,flipV=false;
 var viewMode='real',showAngles=true,showWeights=true;
 var degThreshold=Infinity;
 var showGrid=true;
+var fontScale=1.0;
 var scale=1,offX=0,offY=0;
 var istate='idle';
 var pan0x=0,pan0y=0;
@@ -552,7 +559,7 @@ function isNodeVisible(n){return n.degree<=degThreshold;}
 
 function edgeDelta(e){
   var ang=((e.ang+globalRot)%360+360)%360;var rad=ang*Math.PI/180;
-  var dx=e.w*Math.cos(rad),dy=e.w*Math.sin(rad);
+  var dx=e.w*Math.cos(rad),dy=-e.w*Math.sin(rad);
   if(flipH)dx=-dx;if(flipV)dy=-dy;return{dx:dx,dy:dy};
 }
 function computeRealLayout(){
@@ -593,7 +600,7 @@ function computeEquiLayout(){
         var e=edges[ei];
         // Compute direction from angle only, distance = EQUI_DIST
         var ang=((e.ang+globalRot)%360+360)%360;var rad=ang*Math.PI/180;
-        var dx=EQUI_DIST*Math.cos(rad),dy=EQUI_DIST*Math.sin(rad);
+        var dx=EQUI_DIST*Math.cos(rad),dy=-EQUI_DIST*Math.sin(rad);
         if(flipH)dx=-dx;if(flipV)dy=-dy;
         var na=nodes[e.a],nb=nodes[e.b];var nbr=null,nx,ny;
         if(e.a===cur&&!vis.has(e.b)){nbr=e.b;nx=na.x+dx;ny=na.y+dy;}
@@ -637,7 +644,7 @@ function draw(){
       var mx=(ax+bx)/2,my=(ay+by)/2;
       var parts=[];if(showWeights)parts.push(String(e.w));if(showAngles)parts.push(e.ang+'°');
       var label=parts.join(' / ');
-      var fs=Math.max(8,Math.min(10,9*Math.min(scale,1.4)));
+      var fs=Math.max(8,Math.min(10,9*Math.min(scale,1.4)))*fontScale;
       ctx.font='bold '+fs+'px Space Mono,monospace';
       var tw=ctx.measureText(label).width,pad=3,ph=fs+4;
       ctx.fillStyle=getVar('--lbg');
@@ -678,15 +685,20 @@ function draw(){
     ctx.strokeStyle=isSel?accentCol:isEdgeSrc?'rgba(128,200,255,.9)':col;
     ctx.lineWidth=isSel||isEdgeSrc?2.5:isH?2.2:1.8;
     ctx.shadowBlur=isH?18:7;ctx.shadowColor=col;ctx.stroke();ctx.shadowBlur=0;
-    var fs2=Math.max(8,Math.min(12,r*.85));
+    var fs2=Math.max(8,Math.min(12,r*.85))*fontScale;
     ctx.font='bold '+fs2+'px Syne,sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillStyle=isSel?accentCol:isH?'#fff':col;
-    var label=n.id,maxLW=r*1.7;
-    if(ctx.measureText(label).width>maxLW){
-      var lo=1,hi=label.length-1;
-      while(lo<hi){var m=Math.ceil((lo+hi)/2);ctx.measureText(label.slice(0,m)+'…').width<=maxLW?lo=m:hi=m-1;}
-      label=label.slice(0,lo)+'…';
+    var label=n.id;
+    var labelW=ctx.measureText(label).width;
+    // If text overflows the node, draw a subtle halo behind it for legibility
+    if(labelW>r*1.8){
+      ctx.shadowColor=getVar('--nodebg');
+      ctx.shadowBlur=4;
+      ctx.lineWidth=3;
+      ctx.strokeStyle=getVar('--nodebg');
+      ctx.strokeText(label,sx,sy);
+      ctx.shadowBlur=0;
     }
     ctx.fillText(label,sx,sy);ctx.textBaseline='alphabetic';
   });
@@ -745,6 +757,17 @@ function setViewMode(m){viewMode=m;document.getElementById('btnReal').classList.
 function toggleAngles(){showAngles=!showAngles;document.getElementById('btnAngles').classList.toggle('active',showAngles);draw();}
 function toggleWeights(){showWeights=!showWeights;document.getElementById('btnWeights').classList.toggle('active',showWeights);draw();}
 function toggleGrid(){showGrid=!showGrid;document.getElementById('btnGrid').classList.toggle('active',showGrid);draw();}
+function onFontSlider(val){
+  fontScale=parseInt(val)/100;
+  document.getElementById('fontVal').textContent=fontScale.toFixed(1)+'×';
+  draw();
+}
+function resetFontScale(){
+  fontScale=1.0;
+  document.getElementById('fontSlider').value=100;
+  document.getElementById('fontVal').textContent='1.0×';
+  draw();
+}
 function rotate(deg){globalRot=((globalRot+deg)%360+360)%360;document.getElementById('rotBadge').textContent=globalRot+'°';updateRind();if(edges.length){runLayout();fitView();}}
 function toggleFlip(axis){if(axis==='H')flipH=!flipH;else flipV=!flipV;document.getElementById('btnFlipH').classList.toggle('active',flipH);document.getElementById('btnFlipV').classList.toggle('active',flipV);updateRind();if(edges.length){runLayout();fitView();}}
 function resetTransforms(){globalRot=0;flipH=false;flipV=false;document.getElementById('rotBadge').textContent='0°';['btnFlipH','btnFlipV'].forEach(function(id){document.getElementById(id).classList.remove('active');});updateRind();if(edges.length){runLayout();fitView();}}
@@ -833,7 +856,7 @@ function buildSaveString(){
     var ang=e.ang; // fallback to stored
     if(na&&nb&&na.x!==null&&nb.x!==null){
       // Compute actual visual angle from current world positions
-      ang=((Math.atan2(nb.y-na.y,nb.x-na.x)*180/Math.PI)%360+360)%360;
+      ang=((Math.atan2(na.y-nb.y,nb.x-na.x)*180/Math.PI)%360+360)%360;
       ang=Math.round(ang*10)/10; // one decimal place
     }
     return '['+e.a+';'+e.b+';'+e.w+';'+ang+']';
@@ -1434,7 +1457,7 @@ function finalizeAddEdge(src,dst,w){
   var na=nodes[src],nb=nodes[dst];
   var ang=0;
   if(na&&nb&&na.x!==null&&nb.x!==null){
-    ang=((Math.atan2(nb.y-na.y,nb.x-na.x)*180/Math.PI)%360+360)%360;
+    ang=((Math.atan2(na.y-nb.y,nb.x-na.x)*180/Math.PI)%360+360)%360;
     ang=Math.round(ang/5)*5;
   }
   edges.push({a:src,b:dst,w:w,ang:ang});
